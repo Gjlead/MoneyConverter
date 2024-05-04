@@ -10,6 +10,16 @@ namespace MoneyConverter
     // TO DO: change "million" to "millionen" once we have two or more millions
     internal class MoneyConverter
     {
+        static Dictionary<int, string> getNumberStringDict = new Dictionary<int, string>()
+        {
+            { 1, "ein" }, { 2, "zwei" }, { 3, "drei" }, { 4, "vier" }, { 5, "fünf" }, { 6, "sechs" }, { 7, "sieben" }, { 8, "acht" }, { 9, "neun" }, { 10, "zehn" },
+            { 11, "elf" }, { 12, "zwölf" }, { 20, "zwanzig" }, { 30, "dreißig" }, { 40, "vierzig" }, { 50, "fünfzig" }, { 60, "sechzig" }, { 70, "siebzig" },
+            { 80, "achtzig" }, { 90, "neunzig" }, { 100, "hundert" }, { 1000, "tausend" }, { 1000000, "million" }, { 2000000, "millionen" }
+        };
+
+        static Dictionary<string, int> getNumberIntDict = new Dictionary<string, int>();
+
+        /*
         static List<string> oneToTwelve = new List<string>()
         {
             "ein", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn", "elf", "zwölf"
@@ -21,10 +31,16 @@ namespace MoneyConverter
         static List<string> bigNumbers = new List<string>()
         {
             "hundert", "tausend", "million"
-        };
+        };*/
 
         static void Main(string[] args)
         {
+            // Populate reverse dictionary
+            foreach (var entry in getNumberStringDict)
+            {
+                getNumberIntDict[entry.Value] = entry.Key;
+            }
+
             Console.WriteLine(ConvertMoney(123000002.23m));
         }
 
@@ -53,37 +69,41 @@ namespace MoneyConverter
                     }
                     else if (euroBlocks[i] > 0 && euroBlocks[i] < 13)
                     {
-                        euroString += oneToTwelve[euroBlocks[i] - 1];
+                        euroString += getNumberStringDict[euroBlocks[i]];
                     }
                     else
                     {
                         if (euroBlocks[i] > 99)
                         {
-                            euroString += oneToTwelve[euroBlocks[i]/100-1] + bigNumbers[0];
+                            euroString += getNumberStringDict[euroBlocks[i] / 100] + getNumberStringDict[100];
                             euroBlocks[i] = euroBlocks[i] % 100;
                         }
-                        if (euroBlocks[i] > 00 && euroBlocks[i] < 13)
+                        if (euroBlocks[i] > 0 && euroBlocks[i] < 13)
                         {
-                            euroString += oneToTwelve[euroBlocks[i] - 1];
+                            euroString += getNumberStringDict[euroBlocks[i]];
                         }
                         else
                         {
                             if (euroBlocks[i] % 10 > 0)
                             {
                                 // Take the last number first and add "und" before adding the second to last number
-                                euroString += oneToTwelve[euroBlocks[i] % 10 - 1] + "und";
+                                euroString += getNumberStringDict[euroBlocks[i] % 10] + "und";
+                                euroString += getNumberStringDict[euroBlocks[i] - euroBlocks[i] % 10];
                             }
-                                euroString += tenToNinety[euroBlocks[i] / 10 - 1];
+                            else
+                            {
+                                euroString += getNumberStringDict[euroBlocks[i]];
+                            }
                         }
                     }
                     // Add "thousand" or "million" to the word if neccessary
                     if (euroBlocks.Length - i == 3)
                     {
-                        euroString += bigNumbers[2];
+                        euroString += getNumberStringDict[1000000];
                     }
                     else if (euroBlocks.Length - i == 2)
                     {
-                        euroString += bigNumbers[1];
+                        euroString += getNumberStringDict[1000];
                     }
                 }
                 euroString += " Euro";
@@ -104,15 +124,19 @@ namespace MoneyConverter
             {
                 if (cent < 13)
                 {
-                    centString += oneToTwelve[cent - 1];
+                    centString += getNumberStringDict[cent];
                 }
                 else
                 {
                     if (cent % 10 > 0)
                     {
-                        centString += oneToTwelve[cent % 10 - 1] + "und";
+                        centString += getNumberStringDict[cent % 10] + "und";
+                        centString += getNumberStringDict[cent - cent % 10];
                     }
-                    centString += tenToNinety[cent / 10 - 1];
+                    else
+                    {
+                        centString += getNumberStringDict[cent];
+                    }
                 }
                 centString += " Cent";
             }
