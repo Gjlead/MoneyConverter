@@ -19,20 +19,6 @@ namespace MoneyConverter
 
         static Dictionary<string, int> getNumberIntDict = new Dictionary<string, int>();
 
-        /*
-        static List<string> oneToTwelve = new List<string>()
-        {
-            "ein", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn", "elf", "zwölf"
-        };
-        static List<string> tenToNinety = new List<string>()
-        {
-            "zehn", "zwanzig", "dreißig", "vierzig", "fünfzig", "sechzig", "siebzig", "achtzig", "neunzig"
-        };
-        static List<string> bigNumbers = new List<string>()
-        {
-            "hundert", "tausend", "million"
-        };*/
-
         static void Main(string[] args)
         {
             // Populate reverse dictionary
