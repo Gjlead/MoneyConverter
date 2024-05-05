@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace MoneyConverter
 {
-
     // TO DO: change "million" to "millionen" once we have two or more millions
     internal class MoneyConverter
     {
         static Dictionary<int, string> getNumberStringDict = new Dictionary<int, string>()
         {
             { 1, "ein" }, { 2, "zwei" }, { 3, "drei" }, { 4, "vier" }, { 5, "fünf" }, { 6, "sechs" }, { 7, "sieben" }, { 8, "acht" }, { 9, "neun" }, { 10, "zehn" },
-            { 11, "elf" }, { 12, "zwölf" }, { 20, "zwanzig" }, { 30, "dreißig" }, { 40, "vierzig" }, { 50, "fünfzig" }, { 60, "sechzig" }, { 70, "siebzig" },
+            { 11, "elf" }, { 12, "zwölf" }, { 13, "dreizehn"}, { 14, "vierzehn"}, { 15, "fünfzehn"}, { 16, "sechzehn"}, { 17, "siebzehn"}, { 18, "achtzehn"}, { 19, "neunzehn"},
+            { 20, "zwanzig" }, { 30, "dreißig" }, { 40, "vierzig" }, { 50, "fünfzig" }, { 60, "sechzig" }, { 70, "siebzig" },
             { 80, "achtzig" }, { 90, "neunzig" }, { 100, "hundert" }, { 1000, "tausend" }, { 1000000, "million" }, { 2000000, "millionen" }
         };
 
@@ -24,10 +24,25 @@ namespace MoneyConverter
             // Populate reverse dictionary
             foreach (var entry in getNumberStringDict)
             {
-                getNumberIntDict[entry.Value] = entry.Key;
+                if (entry.Value == "hundert" || entry.Value == "tausend" || entry.Value.Contains("million")){
+                    getNumberIntDict[entry.Value] = -1;
+                }
+                else
+                {
+                    getNumberIntDict[entry.Value] = entry.Key;
+                }
             }
-
+/*
             Console.WriteLine(ConvertMoney(123000002.23m));
+            Console.WriteLine(ConvertMoney(123456789.23m));
+            Console.WriteLine(ConvertMoney(41.14m));
+            Console.WriteLine(ReverseConvert("einhundertdreiundzwanzig Euro zweiundzwanzig Cent"));
+            Console.WriteLine(ReverseConvert("einhundertdreiundzwanzigtausend Euro zweiundzwanzig Cent"));
+            Console.WriteLine(ReverseConvert("einhundertdreiundzwanzigmillion Euro fünfzehn Cent"));*/
+            //Console.WriteLine(ReverseConvert("dreihundert Euro fünfzehn Cent"));
+            //Console.WriteLine(ReverseConvert("einhundertdreiundzwanzigmilliondreihundert Euro fünfzehn Cent"));
+            Console.WriteLine(ReverseConvert("einhundertdreiundzwanzigmilliondreihundertachtunddreißigtausendneununddreißig Euro fünfzehn Cent")); //BUGGY
+            //Console.WriteLine(ReverseConvert("einhundertdreiundzwanzigtausendfünfhundertvierzehn Euro zweiundzwanzig Cent"));
         }
 
         static string ConvertMoney(decimal amount)
@@ -53,7 +68,7 @@ namespace MoneyConverter
                     {
                         continue;
                     }
-                    else if (euroBlocks[i] > 0 && euroBlocks[i] < 13)
+                    else if (euroBlocks[i] > 0 && euroBlocks[i] < 20)
                     {
                         euroString += getNumberStringDict[euroBlocks[i]];
                     }
@@ -64,7 +79,7 @@ namespace MoneyConverter
                             euroString += getNumberStringDict[euroBlocks[i] / 100] + getNumberStringDict[100];
                             euroBlocks[i] = euroBlocks[i] % 100;
                         }
-                        if (euroBlocks[i] > 0 && euroBlocks[i] < 13)
+                        if (euroBlocks[i] > 0 && euroBlocks[i] < 20)
                         {
                             euroString += getNumberStringDict[euroBlocks[i]];
                         }
@@ -108,7 +123,7 @@ namespace MoneyConverter
             }
             else
             {
-                if (cent < 13)
+                if (cent < 20)
                 {
                     centString += getNumberStringDict[cent];
                 }
@@ -187,29 +202,112 @@ namespace MoneyConverter
                 euroString.Trim();
             }
 
+            // Split the number into 3-digit-blocks of hundreds
             List<string> blocks = new List<string>();
             if (euroString.Contains("million"))
             {
                 blocks.Add(euroString.Split(new String[] { "million" }, StringSplitOptions.None)[0]);
-                euroString = euroString.Split(new String[] { "million" }, StringSplitOptions.None)[1];
+                euroString = euroString.Split(new String[] { "million" }, StringSplitOptions.None)[1].Trim();
             }
             else if (euroString.Contains("millionen"))
             {
                 blocks.Add(euroString.Split(new String[] { "millionen" }, StringSplitOptions.None)[0]);
-                euroString = euroString.Split(new String[] { "millionen" }, StringSplitOptions.None)[1];
+                euroString = euroString.Split(new String[] { "millionen" }, StringSplitOptions.None)[1].Trim();
             }
             if (euroString.Contains("tausend"))
             {
                 blocks.Add(euroString.Split(new String[] { "tausend" }, StringSplitOptions.None)[0]);
-                euroString = euroString.Split(new String[] { "tausend" }, StringSplitOptions.None)[1];
+                euroString = euroString.Split(new String[] { "tausend" }, StringSplitOptions.None)[1].Trim();
             }
             // Add an empty thousands block for numbers such as zweimillionenfünf where the thousands block is left out in the word.
+            // Situation: We have not encountered a "tausend", but have at least one block already, meaning we are in the millions and have to add the empty thousands block.
             else if(blocks.Count > 0)
             {
-                blocks.Add("");
+                blocks.Add("000");
             }
-            blocks.Add(euroString);
+            // Situation: We have encountered million or tausend and nothing afterwards: We need to add some more zeroes.
+            if (string.IsNullOrEmpty(euroString))
+            {
+                blocks.Add("000");
+            }
+            // Add the rest of the number, if there is a rest.
+            else
+            {
+                blocks.Add(euroString);
+            }
 
+            string numberBuilder = "";
+            int currentNumber;
+            bool switchNumbers = false;
+
+            for (int i = 0; i < blocks.Count; i++)
+            {
+                Console.WriteLine("builder: " + numberBuilder + " Block: " + blocks[i]);
+                if (blocks[i] == "000")
+                {
+                    numberBuilder += "000";
+                    continue;
+                }
+                // When looking for the numbers in the long word I can start at the third position because no number word is shorter than 3 characters
+                int j = 3;
+                while (j <= blocks[i].Length)
+                {
+                    // Prevent numbers like vierzehn from being split into 4 and 10
+                    if (blocks[i].Length >= 8 && (blocks[i].Substring(0, j) == "drei" || blocks[i].Substring(0, j) == "vier" || blocks[i].Substring(0, j) == "fünf" ||
+                        blocks[i].Substring(0, j) == "acht" || blocks[i].Substring(0, j) == "neun") && blocks[i].Substring(4, 4) == "zehn")
+                    {
+                        j += 4; // To also get the "zehn" coming after the number
+                    }
+                    try
+                    {
+                        currentNumber = getNumberIntDict[blocks[i].Substring(0, j)];
+                        // Words like "tausend", "hundert" only interest us in edge cases like "dreihundert" where the number ends with them, because we then have to pad some 0s.
+                        if (currentNumber == -1)
+                        {
+                            if (j >= blocks[i].Length - 1)
+                            {
+                                while (numberBuilder.Length % 3 > 0)
+                                {
+                                    numberBuilder += "0";
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Switch the last two numbers if they are connected by "und"
+                            if (switchNumbers)
+                            {
+                                Console.WriteLine("Switch: " + numberBuilder);
+                                int tempNumber = Int32.Parse(numberBuilder.Substring(numberBuilder.Length - 1));
+                                numberBuilder = numberBuilder.Remove(numberBuilder.Length - 1);
+                                numberBuilder += currentNumber/10 + "" + tempNumber;
+                                Console.WriteLine("Switch done: " + numberBuilder);
+                                switchNumbers = false;
+                            }
+                            else
+                            {
+                                numberBuilder += currentNumber;
+                            }
+                        }
+                        blocks[i] = blocks[i].Substring(j); // Cut away the already converted part of the number
+                        j = 3;
+
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        if (blocks[i].Substring(0, j) == "und")
+                        {
+                            switchNumbers = true;
+                            blocks[i] = blocks[i].Substring(j);
+                            j = 3;
+                            continue;
+                            
+                        }
+                        j++;
+                        continue;
+                    }
+                }
+            }
 
 
 
@@ -219,7 +317,7 @@ namespace MoneyConverter
                 centString.Trim();
             }
 
-            return 1;
+            return Int32.Parse(numberBuilder);
         }
     }
 }
