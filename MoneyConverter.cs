@@ -48,7 +48,7 @@ namespace MoneyConverter
         static string ConvertMoney(decimal amount)
         {
             // EURO
-            int euro = SplitIntoEuroAndCent(amount)[0];
+            int euro = (int)Math.Floor(amount);
             string euroString = "";
             if (euro == 0) { }
             if (euro > 999999999)
@@ -109,11 +109,11 @@ namespace MoneyConverter
                 }
                 euroString += " Euro";
             }
-            
+
 
 
             // CENT
-            int cent = SplitIntoEuroAndCent(amount)[1];
+            int cent = (int)((amount - euro) * 100);
             string centString = "";
             if (cent == 0) { }
             if (cent > 99)
@@ -145,25 +145,6 @@ namespace MoneyConverter
             return euroString + " " + centString;
         }
 
-
-        static int[] SplitIntoEuroAndCent(decimal amount)
-        {
-            string money = "";
-
-            try
-            {
-                money = amount.ToString();
-            }
-            catch (FormatException)
-            {
-                Console.WriteLine("Bitte einen Geldwert in Form von 1 bis 9 Euro-Ziffern und exakt 2 Cent-Ziffern eingeben, getrennt durch einen Punkt.");
-                Environment.Exit(1);
-            }
-
-            string[] euroAndCent = money.Split(',');
-
-            return new int[] { Int32.Parse(euroAndCent[0]), Int32.Parse(euroAndCent[1]) };
-        }
 
         // Splits the number into blocks of 3
         static int[] SplitNumberIntoBlocks(int amount)
