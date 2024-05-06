@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace MoneyConverter
 {
-    // TO DO: change "million" to "millionen" once we have two or more millions
     internal class MoneyConverter
     {
         static Dictionary<int, string> getNumberStringDict = new Dictionary<int, string>()
@@ -33,18 +33,19 @@ namespace MoneyConverter
                 }
             }
 
-            //Console.WriteLine(ConvertMoney(123000002.23m));
-            //Console.WriteLine(ConvertMoney(123456789.23m));
-            //Console.WriteLine(ConvertMoney(41.14m));
+            Console.WriteLine("123000002.23 = " + ConvertMoney(123000002.23m));
+            Console.WriteLine("123456789.23 = " + ConvertMoney(123456789.23m));
+            Console.WriteLine("41.14 = " + ConvertMoney(41.14m));
             Console.WriteLine("vierzehn Euro = " + ReverseConvert("vierzehn Euro"));
+            Console.WriteLine("vierzehn Cent = " + ReverseConvert("vierzehn Cent"));
             Console.WriteLine("einhundertdreiundzwanzig Euro zweiundzwanzig Cent = " + ReverseConvert("einhundertdreiundzwanzig Euro zweiundzwanzig Cent"));
-            Console.WriteLine("einhundertdreiundzwanzigtausend Euro zweiundzwanzig Cent = " + ReverseConvert("einhundertdreiundzwanzigtausend Euro zweiundzwanzig Cent"));
+            Console.WriteLine("einhundertdreiundzwanzigtausend Euro dreiundzwanzig Cent = " + ReverseConvert("einhundertdreiundzwanzigtausend Euro dreiundzwanzig Cent"));
             Console.WriteLine("einhundertdreiundzwanzigmillion Euro fünfzehn Cent = " + ReverseConvert("einhundertdreiundzwanzigmillion Euro fünfzehn Cent"));
-            Console.WriteLine("dreitausendein Euro fünfzehn Cent = " + ReverseConvert("dreitausendein Euro fünfzehn Cent"));
-            Console.WriteLine("einhundertdreiundzwanzigmilliondreihundert Euro fünfzehn Cent = " + ReverseConvert("einhundertdreiundzwanzigmilliondreihundert Euro fünfzehn Cent"));
-            Console.WriteLine("einhundertdreiundzwanzigmilliondreihundertachtunddreißigtausendneununddreißig Euro fünfzehn Cent = " + ReverseConvert("einhundertdreiundzwanzigmilliondreihundertachtunddreißigtausendneununddreißig Euro fünfzehn Cent")); //BUGGY
-            Console.WriteLine("einhundertdreiundzwanzigtausendfünfhundertvierzehn Euro zweiundzwanzig Cent = " + ReverseConvert("einhundertdreiundzwanzigtausendfünfhundertvierzehn Euro zweiundzwanzig Cent"));
-            Console.WriteLine("vierzehnmillionachtzehn Euro zweiundzwanzig Cent = " + ReverseConvert("vierzehnmillionachtzehn Euro zweiundzwanzig Cent"));
+            Console.WriteLine("dreitausendein Euro sechs Cent = " + ReverseConvert("dreitausendein Euro sechs Cent"));
+            Console.WriteLine("einhundertdreiundzwanzigmilliondreihundert Euro achtundvierzig Cent = " + ReverseConvert("einhundertdreiundzwanzigmilliondreihundert Euro achtundvierzig Cent"));
+            Console.WriteLine("einhundertdreiundzwanzigmilliondreihundertachtunddreißigtausendneununddreißig Euro fünfzehn Cent = " + ReverseConvert("einhundertdreiundzwanzigmilliondreihundertachtunddreißigtausendneununddreißig Euro fünfzehn Cent"));
+            Console.WriteLine("einhundertdreiundzwanzigtausendfünfhundertvierzehn Euro elf Cent = " + ReverseConvert("einhundertdreiundzwanzigtausendfünfhundertvierzehn Euro elf Cent"));
+            Console.WriteLine("vierzehnmillionenachtzehn Euro ein Cent = " + ReverseConvert("vierzehnmillionenachtzehn Euro ein Cent"));
         }
 
         static string ConvertMoney(decimal amount)
@@ -103,6 +104,10 @@ namespace MoneyConverter
                     if (euroBlocks.Length - i == 3)
                     {
                         euroString += getNumberStringDict[1000000];
+                        if (euro >= 2000000)
+                        {
+                            euroString += "en"; // million --> millionen
+                        }
                     }
                     else if (euroBlocks.Length - i == 2)
                     {
@@ -173,47 +178,77 @@ namespace MoneyConverter
         }
 
 
-        static int ReverseConvert(string amount)
+        static decimal ReverseConvert(string amount)
         {
             string euroString = "";
             string centString = "";
+            decimal result = 0.00m;
 
             if (amount.Contains("Euro"))
             {
                 euroString = amount.Split(new string[] {"Euro"}, StringSplitOptions.None)[0];
                 // StringSplitOptions.TrimEntries would have dealt with white-spaces, but that option is only available since .NET 5, and this solution targets the 4.8 framework.
-                euroString.Trim();
+                euroString = euroString.Trim();
+                euroString = euroString.Replace("millionen", "million");
+                amount = amount.Split(new string[] { "Euro" }, StringSplitOptions.None)[1];
+            }
+            if (amount.Contains("Cent"))
+            {
+                centString = amount.Split(new string[] { "Cent" }, StringSplitOptions.None)[0];
+                centString = centString.Trim();
             }
 
-            euroString = euroString.Replace("millionen", "million");
+            if (euroString.Length > 0)
+            {
+                result += ReverseConvert(euroString, true);
+            }
+            if (centString.Length > 0)
+            {
+                result += ReverseConvert(centString, false);
+            }
 
-            string numberString = "000";
+            return result;
+        }
+
+        // Looks at the whole number-word and traverses it number by number, while building a charArray containing the digits corresponding to the number-words.
+        static decimal ReverseConvert(string amount, bool isEuro)
+        {
+            string numberString = "00";
+            if (isEuro)
+            {
+                numberString += "0";
+            }
+            
             string number;
             string nextNumber;
 
-            if (euroString.Contains("million"))
+            if (amount.Contains("million"))
             {
                 numberString = "000000000";
             }
-            else if (euroString.Contains("tausend"))
+            else if (amount.Contains("tausend"))
             {
                 numberString = "000000";
             }
 
             char[] numberChars = numberString.ToCharArray();
-            int i = 0;
-
-            while (euroString.Length > 0)
+            int i = -1; // Used for traversing numberChars
+            if (isEuro)
             {
-                number = GetNumber(euroString);
+                i++;
+            }
+
+            while (amount.Length > 0)
+            {
+                number = GetNumber(amount);
                 if (number.Equals(""))
                 {
                     break;
                 }
                 if (number.Equals("million"))
                 {
-                    euroString = euroString.Remove(0, number.Length);
-                    if (euroString.Contains("tausend") == false) // If there are no thousands in the number, we gotta jump over the thousands block
+                    amount = amount.Remove(0, number.Length);
+                    if (amount.Contains("tausend") == false) // If there are no thousands in the number, we gotta jump over the thousands block
                     {
                         i += 3;
                     }
@@ -221,23 +256,23 @@ namespace MoneyConverter
                 }
                 if (number.Equals("tausend"))
                 {
-                    euroString = euroString.Remove(0, number.Length);
+                    amount = amount.Remove(0, number.Length);
                     continue;
                 }
-                nextNumber = GetNextNumber(euroString, number.Length);
+                nextNumber = GetNextNumber(amount, number.Length);
                 if (nextNumber.Equals("und"))
                 {
-                    string[] switchedNumbers = SwitchNumbers(number, euroString, number.Length+3);
-                    numberChars[1+i] = (char)((getNumberIntDict[switchedNumbers[0]] / 10) + '0');
-                    numberChars[2+i] = (char)((getNumberIntDict[switchedNumbers[1]]) + '0');
-                    euroString = euroString.Remove(0, switchedNumbers[0].Length + switchedNumbers[1].Length + 3);
+                    string[] switchedNumbers = SwitchNumbers(number, amount, number.Length + 3);
+                    numberChars[1 + i] = (char)((getNumberIntDict[switchedNumbers[0]] / 10) + '0');
+                    numberChars[2 + i] = (char)((getNumberIntDict[switchedNumbers[1]]) + '0');
+                    amount = amount.Remove(0, switchedNumbers[0].Length + switchedNumbers[1].Length + 3);
                     i += 3;
                     continue;
                 }
                 if (nextNumber.Equals("hundert"))
                 {
-                    numberChars[0+i] = (char)((getNumberIntDict[number]) + '0');
-                    euroString = euroString.Remove(0, number.Length + nextNumber.Length);
+                    numberChars[0 + i] = (char)((getNumberIntDict[number]) + '0');
+                    amount = amount.Remove(0, number.Length + nextNumber.Length);
                     continue;
                 }
                 else
@@ -254,23 +289,24 @@ namespace MoneyConverter
                     {
                         numberChars[2 + i] = (char)((getNumberIntDict[number]) + '0');
                     }
-                    euroString = euroString.Remove(0, number.Length);
+                    amount = amount.Remove(0, number.Length);
                     i += 3;
                 }
             }
 
-            /*if (amount.Contains("Cent"))
+            if (isEuro)
             {
-                centString = amount.Split(new string[] { "Cent" }, StringSplitOptions.None)[0];
-                centString.Trim();
-            }*/
-
-            return Int32.Parse(new string(numberChars));
+                return decimal.Parse(new string(numberChars));
+            }
+            else
+            {
+                return decimal.Parse(new string(numberChars)) / 100;
+            }
         }
 
         static string GetNumber(string numbers)
         {
-            for (int i = 3; i  < numbers.Length; i++)
+            for (int i = 3; i  <= numbers.Length; i++)
             {
                 if (getNumberIntDict.ContainsKey(numbers.Substring(0, i)))
                 {
@@ -288,13 +324,14 @@ namespace MoneyConverter
             return "";
         }
 
+        // Gets the next number (or "und") after the current number
         static string GetNextNumber(string numbers, int index)
         {
             if (numbers.Length > index+3 && numbers.Substring(index, 3).Equals("und"))
             {
                 return "und";
             }
-            for (int i = 3; i < numbers.Length-index; i++)
+            for (int i = 3; i <= numbers.Length-index; i++)
             {
                 if (getNumberIntDict.ContainsKey(numbers.Substring(index, i)))
                 {
@@ -312,6 +349,7 @@ namespace MoneyConverter
             return "";
         }
 
+        // Switches numbers connected with "und"
         static string[] SwitchNumbers(string firstNumber, string numbers, int index)
         {
             string nextNumber = GetNextNumber(numbers, index);
